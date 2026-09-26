@@ -125,11 +125,15 @@ function SiteHeader() {
 
   useEffect(() => {
     let active = true;
+    const localRole = typeof window !== "undefined" ? localStorage.getItem("telopinto_role") : null;
+    if (localRole) {
+      setSignedIn(true);
+    }
     supabase.auth.getUser().then(({ data }) => {
-      if (active) setSignedIn(Boolean(data.user));
+      if (active) setSignedIn(Boolean(data.user) || Boolean(localStorage.getItem("telopinto_role")));
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSignedIn(Boolean(session?.user));
+      setSignedIn(Boolean(session?.user) || Boolean(localStorage.getItem("telopinto_role")));
     });
     return () => {
       active = false;

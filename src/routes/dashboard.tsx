@@ -44,9 +44,12 @@ function DashboardPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
+      const localUser = typeof window !== "undefined" ? localStorage.getItem("telopinto_user") : null;
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email ?? null);
+      } else if (localUser) {
+        setUserEmail(localUser);
       }
       const { data, error } = await supabase
         .from("orders")
@@ -70,6 +73,8 @@ function DashboardPage() {
   }, []);
 
   const handleSignOut = async () => {
+    localStorage.removeItem("telopinto_role");
+    localStorage.removeItem("telopinto_user");
     await supabase.auth.signOut();
     toast.info("Sesión cerrada");
     navigate({ to: "/" });

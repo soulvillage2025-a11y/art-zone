@@ -133,7 +133,31 @@ function AuthPage() {
                 : "Creando cuenta..."
               : mode === "login"
                 ? "Ingresar al panel"
-                : "Crear cuenta de Administrador"}
+                : "Crear cuenta con correo"}
+          </Button>
+
+          {/* Quick Admin Access for local / testing */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">O acceso directo</span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+            onClick={() => {
+              localStorage.setItem("telopinto_role", "admin");
+              localStorage.setItem("telopinto_user", "admin@telopinto.com");
+              toast.success("Sesión iniciada como Administrador del Taller");
+              navigate({ to: "/dashboard" });
+            }}
+          >
+            Entrar como Administrador (Acceso Taller)
           </Button>
 
           <div className="pt-2 text-center text-xs text-muted-foreground">
