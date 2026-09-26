@@ -100,6 +100,7 @@ export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orderSchema.parse(input))
   .handler(async ({ data }) => {
     const sb = publicClient();
+    const { saveStoredOrder } = await import("@/lib/order-storage.server");
 
     const { data: product, error: pErr } = await sb
       .from("products")
@@ -131,51 +132,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const year = new Date().getFullYear();
     const code = `TLP-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Try supabaseAdmin if service role key is present
-    if (process.env["SUPABASE_SERVICE_ROLE_KEY"]) {
-      try {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: inserted, error } = await supabaseAdmin
-          .from("orders")
-          .insert({
-            order_code: code,
-            customer_name: data.customer_name,
-            customer_email: data.customer_email,
-            customer_phone: data.customer_phone,
-            shipping_address: data.shipping_address,
-            delivery_method: data.delivery_method,
-            product_id: product.id,
-            product_name: product.name,
-            customization: data.customization,
-            notes: data.notes,
-            estimated_total: total,
-            status: "pendiente_aprobacion",
-          })
-          .select("order_code, estimated_total")
-          .single();
-
-        if (!error && inserted) {
-          return {
-            order_code: inserted.order_code,
-            estimated_total: inserted.estimated_total,
-            product_name: product.name,
-            customer_name: data.customer_name,
-            customer_email: data.customer_email,
-            customer_phone: data.customer_phone,
-            delivery_method: data.delivery_method,
-            shipping_address: data.shipping_address,
-            notes: data.notes,
-            customization: data.customization,
-          };
-        }
-        console.warn("[createOrder] Supabase insert warning:", error?.message);
-      } catch (err) {
-        console.warn("[createOrder] Supabase admin error:", err);
-      }
-    }
-
-    // Fallback store
-    const localOrder = {
+    const orderRecord = {
       id: crypto.randomUUID(),
       order_code: code,
       customer_name: data.customer_name,
@@ -191,7 +148,32 @@ export const createOrder = createServerFn({ method: "POST" })
       status: "pendiente_aprobacion",
       created_at: new Date().toISOString(),
     };
-    fallbackOrders.unshift(localOrder);
+
+    // Always persist to local file store
+    saveStoredOrder(orderRecord);
+
+    // Also attempt Supabase insert if service role key is available
+    if (process.env["SUPABASE_SERVICE_ROLE_KEY"]) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("orders").insert({
+          order_code: code,
+          customer_name: data.customer_name,
+          customer_email: data.customer_email,
+          customer_phone: data.customer_phone,
+          shipping_address: data.shipping_address,
+          delivery_method: data.delivery_method,
+          product_id: product.id,
+          product_name: product.name,
+          customization: data.customization,
+          notes: data.notes,
+          estimated_total: total,
+          status: "pendiente_aprobacion",
+        });
+      } catch (err) {
+        console.warn("[createOrder] Supabase remote insert error:", err);
+      }
+    }
 
     return {
       order_code: code,
@@ -207,25 +189,47 @@ export const createOrder = createServerFn({ method: "POST" })
     };
   });
 
-export const listOrders = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("orders")
-      .select(
-        "id, order_code, customer_name, customer_email, customer_phone, shipping_address, delivery_method, product_name, customization, notes, estimated_total, status, created_at, products(svg_variant)",
-      )
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  });
+export const listOrders = createServerFn({ method: "GET" }).handler(async () => {
+  const { getStoredOrders } = await import("@/lib/order-storage.server");
+  const localOrders = getStoredOrders();
+
+  // Also query Supabase if service role key exists
+  if (process.env["SUPABASE_SERVICE_ROLE_KEY"]) {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: remoteOrders } = await supabaseAdmin
+        .from("orders")
+        .select(
+          "id, order_code, customer_name, customer_email, customer_phone, shipping_address, delivery_method, product_name, customization, notes, estimated_total, status, created_at",
+        )
+        .order("created_at", { ascending: false });
+
+      if (remoteOrders && remoteOrders.length > 0) {
+        const existingCodes = new Set(localOrders.map((o) => o.order_code));
+        for (const ro of remoteOrders) {
+          if (!existingCodes.has(ro.order_code)) {
+            localOrders.push(ro as unknown as typeof localOrders[0]);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[listOrders] Remote query warning:", err);
+    }
+  }
+
+  // Sort descending by created_at
+  localOrders.sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  return localOrders;
+});
 
 export const updateOrderStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
-        id: z.string().uuid(),
+        id: z.string(),
         status: z.enum([
           "pendiente_aprobacion",
           "esperando_producto",
@@ -236,11 +240,18 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("orders")
-      .update({ status: data.status })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+  .handler(async ({ data }) => {
+    const { updateStoredOrderStatus } = await import("@/lib/order-storage.server");
+    updateStoredOrderStatus(data.id, data.status);
+
+    if (process.env["SUPABASE_SERVICE_ROLE_KEY"]) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("orders").update({ status: data.status }).eq("id", data.id);
+      } catch (err) {
+        console.warn("[updateOrderStatus] Remote update error:", err);
+      }
+    }
+
     return { ok: true };
   });

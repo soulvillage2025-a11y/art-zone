@@ -327,7 +327,8 @@ function PersonalizarPage() {
       };
 
       const result = await createOrder({ data: payload });
-      setCompletedOrder({
+      const newOrderData = {
+        id: crypto.randomUUID(),
         order_code: result.order_code,
         estimated_total: result.estimated_total,
         product_name: product.name,
@@ -338,7 +339,19 @@ function PersonalizarPage() {
         shipping_address: formData.shipping_address,
         notes: formData.notes,
         customization: currentSelections,
-      });
+        status: "pendiente_aprobacion",
+        created_at: new Date().toISOString(),
+      };
+
+      try {
+        const stored = JSON.parse(localStorage.getItem("telopinto_client_orders") || "[]");
+        stored.unshift(newOrderData);
+        localStorage.setItem("telopinto_client_orders", JSON.stringify(stored));
+      } catch (err) {
+        console.warn("Could not save to localStorage backup:", err);
+      }
+
+      setCompletedOrder(newOrderData);
       setIsCheckoutOpen(false);
       toast.success(`¡Pedido ${result.order_code} generado con éxito!`);
     } catch (err: unknown) {

@@ -15,6 +15,7 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+.orders-store.json
 
 # Wrangler / Cloudflare
 .wrangler/
