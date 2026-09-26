@@ -184,6 +184,8 @@ export function DashboardPage() {
   const selectedVariant = useMemo(() => {
     if (!selectedOrder) return "buda_completo";
     const name = (selectedOrder.product_name || "").toLowerCase();
+    if (name.includes("bendici") || name.includes("abhaya") || name.includes("serenidad"))
+      return "buda_bendicion";
     if (name.includes("sonriente")) return "buda_sonriente";
     if (name.includes("cabeza") || name.includes("zen")) return "cabeza_zen";
     return "buda_completo";
@@ -207,6 +209,12 @@ export function DashboardPage() {
           name.includes("cabeza")
         )
           key = "rizos";
+        else if (name.includes("collar") || name.includes("perla") || name.includes("dije"))
+          key = "collar";
+        else if (name.includes("piel") || name.includes("torso") || name.includes("cuerpo"))
+          key = "piel";
+        else if (name.includes("bindi") || name.includes("urna") || name.includes("cenefa") || name.includes("detalle"))
+          key = "detalles";
         else if (name.includes("rostro") || name.includes("cara")) key = "rostro";
         else if (name.includes("manto") || name.includes("túnica")) key = "manto";
         else if (name.includes("pecho") || name.includes("vientre")) key = "pecho";

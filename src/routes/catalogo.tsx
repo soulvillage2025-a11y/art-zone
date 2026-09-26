@@ -71,21 +71,37 @@ function Catalogo() {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((p) => (
-          <article key={p.id} className="gallery-panel overflow-hidden">
-            <div className="flex justify-center bg-stone-wash p-6">
-              <BudaSvg
-                variant={p.svg_variant}
-                view="frontal"
-                className="h-56 w-auto"
-                colors={{
-                  aura: "#E7E3DA",
-                  rizos: "#DAD5CA",
-                  rostro: "#F3F1EC",
-                  manto: "#E2DED4",
-                  pecho: "#F3F1EC",
-                  base: "#DCD7CC",
-                }}
-              />
+          <article key={p.id} className="gallery-panel overflow-hidden flex flex-col justify-between">
+            <div className="relative flex justify-center items-center bg-stone-wash p-6 min-h-[260px] overflow-hidden group">
+              {"image_url" in p && p.image_url ? (
+                <div className="relative w-full h-60 flex items-center justify-center">
+                  <img
+                    src={p.image_url}
+                    alt={p.name}
+                    className="h-full w-auto max-w-full object-contain drop-shadow-md rounded-lg transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <span className="absolute top-2 right-2 bg-background/90 backdrop-blur-xs text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border border-border text-primary shadow-xs">
+                    Mármol blanco
+                  </span>
+                </div>
+              ) : (
+                <BudaSvg
+                  variant={p.svg_variant}
+                  view="frontal"
+                  className="h-56 w-auto"
+                  colors={{
+                    aura: "#E7E3DA",
+                    rizos: "#DAD5CA",
+                    rostro: "#F3F1EC",
+                    manto: "#EDE9E3",
+                    pecho: "#F3F1EC",
+                    base: "#DCD7CC",
+                    piel: "#F5F3EF",
+                    collar: "#FDFCFB",
+                    detalles: "#E7E3DA",
+                  }}
+                />
+              )}
             </div>
             <div className="space-y-3 p-5">
               <Badge variant="secondary">{p.category}</Badge>

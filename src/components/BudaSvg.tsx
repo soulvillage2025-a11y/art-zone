@@ -134,10 +134,151 @@ const cabezaZen: Record<View, Shape[]> = {
   ],
 };
 
+const budaBendicion: Record<View, Shape[]> = {
+  frontal: [
+    // Manto inferior (piernas cruzadas y regazo con pliegues)
+    {
+      zone: "manto",
+      type: "path",
+      d: "M36 368 C32 324 64 274 116 268 C142 264 162 268 186 268 C242 268 268 322 264 368 C224 388 76 388 36 368 Z",
+    },
+    // Manto superior (hombro izquierdo, brazo y manga)
+    {
+      zone: "manto",
+      type: "path",
+      d: "M148 168 C160 178 182 184 208 196 C228 206 240 228 236 274 L168 274 C162 248 156 222 142 196 Z",
+    },
+    // Piel del torso (pecho derecho descubierto)
+    {
+      zone: "piel",
+      type: "path",
+      d: "M148 168 L140 198 C126 226 120 252 118 272 L90 268 C82 246 86 198 120 178 C130 172 140 169 148 168 Z",
+    },
+    // Brazo derecho alzado y mano en Abhaya Mudra (gesto de bendición y protección)
+    {
+      zone: "piel",
+      type: "path",
+      d: "M86 236 C82 258 90 282 102 282 C114 282 126 264 130 240 L130 194 C130 184 140 184 140 196 L138 246 C136 272 118 294 96 292 C78 290 68 260 74 226 C78 204 86 198 92 198 C96 198 90 218 86 236 Z",
+    },
+    // Mano izquierda reposando en el regazo
+    {
+      zone: "piel",
+      type: "path",
+      d: "M136 290 C148 284 184 284 198 292 C206 298 202 310 188 310 C168 310 144 308 134 302 C128 298 130 292 136 290 Z",
+    },
+    // Pie visible en posición de loto
+    {
+      zone: "piel",
+      type: "path",
+      d: "M114 338 C124 328 144 330 148 342 C148 352 132 358 118 354 C110 350 110 342 114 338 Z",
+    },
+    // Cuello
+    {
+      zone: "piel",
+      type: "path",
+      d: "M136 156 L136 172 C144 176 156 176 164 172 L164 156 Z",
+    },
+    // Rostro sereno
+    { zone: "piel", type: "ellipse", cx: 150, cy: 114, rx: 42, ry: 48 },
+    // Orejas alargadas
+    {
+      zone: "piel",
+      type: "path",
+      d: "M108 112 C104 122 104 142 108 150 C110 150 112 138 112 122 Z",
+    },
+    {
+      zone: "piel",
+      type: "path",
+      d: "M192 112 C196 122 196 142 192 150 C190 150 188 138 188 122 Z",
+    },
+    // Rizos del cabello y ushnisha cónico
+    {
+      zone: "rizos",
+      type: "path",
+      d: "M108 114 C102 60 198 60 192 114 C184 92 172 78 150 78 C128 78 116 92 108 114 Z",
+    },
+    { zone: "rizos", type: "circle", cx: 150, cy: 56, r: 14 },
+    { zone: "rizos", type: "circle", cx: 150, cy: 42, r: 6 },
+    // Collar de perlas en el cuello
+    {
+      zone: "collar",
+      type: "path",
+      d: "M134 168 C140 176 160 176 166 168 C168 174 162 182 150 184 C138 182 132 174 134 168 Z",
+    },
+    // Dije floral de 5 pétalos sobre el pecho
+    { zone: "collar", type: "circle", cx: 150, cy: 191, r: 7 },
+    { zone: "collar", type: "circle", cx: 150, cy: 185, r: 3.5 },
+    { zone: "collar", type: "circle", cx: 155, cy: 189, r: 3.5 },
+    { zone: "collar", type: "circle", cx: 153, cy: 195, r: 3.5 },
+    { zone: "collar", type: "circle", cx: 147, cy: 195, r: 3.5 },
+    { zone: "collar", type: "circle", cx: 145, cy: 189, r: 3.5 },
+    // Detalles: Bindi / Urna en la frente y cenefa ornamental
+    { zone: "detalles", type: "circle", cx: 150, cy: 102, r: 3.5 },
+    {
+      zone: "detalles",
+      type: "path",
+      d: "M146 170 C154 180 174 188 200 198 C202 201 198 204 194 202 C170 192 150 182 144 172 Z",
+    },
+  ],
+  lateral: [
+    {
+      zone: "manto",
+      type: "path",
+      d: "M48 368 C44 324 74 274 124 268 C150 264 170 268 192 268 C242 268 266 322 260 368 C220 388 88 388 48 368 Z",
+    },
+    {
+      zone: "manto",
+      type: "path",
+      d: "M154 168 C164 178 186 184 212 196 C230 206 242 228 238 274 L174 274 C168 248 162 222 148 196 Z",
+    },
+    {
+      zone: "piel",
+      type: "path",
+      d: "M152 168 L144 198 C130 226 126 252 124 272 L96 268 C90 246 94 198 126 178 C136 172 144 169 152 168 Z",
+    },
+    {
+      zone: "piel",
+      type: "path",
+      d: "M92 236 C88 258 96 282 108 282 C120 282 130 264 134 240 L134 194 C134 184 144 184 144 196 L142 246 C140 272 124 294 102 292 C84 290 76 260 82 226 C86 204 92 198 98 198 C102 198 96 218 92 236 Z",
+    },
+    {
+      zone: "piel",
+      type: "path",
+      d: "M140 290 C152 284 186 284 200 292 C208 298 204 310 190 310 C170 310 148 308 138 302 C132 298 134 292 140 290 Z",
+    },
+    {
+      zone: "piel",
+      type: "path",
+      d: "M138 156 L138 172 C146 176 158 176 166 172 L166 156 Z",
+    },
+    { zone: "piel", type: "ellipse", cx: 154, cy: 114, rx: 38, ry: 48 },
+    {
+      zone: "piel",
+      type: "path",
+      d: "M194 112 C198 122 198 142 194 150 C192 150 190 138 190 122 Z",
+    },
+    {
+      zone: "rizos",
+      type: "path",
+      d: "M114 114 C108 60 200 60 194 114 C186 92 174 78 152 78 C130 78 120 92 114 114 Z",
+    },
+    { zone: "rizos", type: "circle", cx: 154, cy: 56, r: 14 },
+    { zone: "rizos", type: "circle", cx: 154, cy: 42, r: 6 },
+    {
+      zone: "collar",
+      type: "path",
+      d: "M138 168 C144 176 162 176 168 168 C170 174 164 182 152 184 C140 182 136 174 138 168 Z",
+    },
+    { zone: "collar", type: "circle", cx: 152, cy: 191, r: 6 },
+    { zone: "detalles", type: "circle", cx: 158, cy: 102, r: 3 },
+  ],
+};
+
 const VARIANTS: Record<string, Record<View, Shape[]>> = {
   buda_completo: budaCompleto,
   buda_sonriente: budaSonriente,
   cabeza_zen: cabezaZen,
+  buda_bendicion: budaBendicion,
 };
 
 type Props = {

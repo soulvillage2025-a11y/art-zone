@@ -131,7 +131,8 @@ FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 INSERT INTO public.products (slug, name, category, description, svg_variant, base_price, price_per_zone, production_days, sort_order) VALUES
 ('buda-meditacion', 'Buda Meditación en Mármol', 'Figuras', 'Figura clásica en posición dhyana, tallada en mármol blanco. Ideal para intervenciones de color en manto, aura y base de loto.', 'buda_completo', 180000, 35000, 7, 1),
 ('buda-sonriente', 'Buda Sonriente de la Fortuna', 'Figuras', 'Pieza redondeada en mármol con superficie amplia, perfecta para acabados metálicos y contrastes vivos.', 'buda_sonriente', 210000, 35000, 8, 2),
-('cabeza-zen', 'Cabeza Zen en Mármol', 'Decorativos', 'Busto minimalista de líneas limpias. Pocas zonas, máximo impacto visual sobre pedestal.', 'cabeza_zen', 150000, 30000, 5, 3);
+('cabeza-zen', 'Cabeza Zen en Mármol', 'Decorativos', 'Busto minimalista de líneas limpias. Pocas zonas, máximo impacto visual sobre pedestal.', 'cabeza_zen', 150000, 30000, 5, 3),
+('buda-bendicion', 'Buda de la Bendición en Mármol', 'Figuras', 'Escultura sagrada en postura de loto con mudra de bendición y protección (Abhaya Mudra), túnica drapeada con finos relieves y gargantilla floral. Tallada en mármol blanco.', 'buda_bendicion', 195000, 35000, 7, 4);
 
 INSERT INTO public.product_zones (product_id, zone_key, zone_name, default_hex, sort_order)
 SELECT p.id, z.zone_key, z.zone_name, z.default_hex, z.sort_order
@@ -151,7 +152,12 @@ JOIN (VALUES
   ('buda-sonriente','base','Base','#DCD7CC',6),
   ('cabeza-zen','rizos','Rizos del cabello','#DAD5CA',1),
   ('cabeza-zen','rostro','Rostro','#F3F1EC',2),
-  ('cabeza-zen','base','Pedestal','#DCD7CC',3)
+  ('cabeza-zen','base','Pedestal','#DCD7CC',3),
+  ('buda-bendicion','manto','Manto / Túnica Grabada','#EDE9E3',1),
+  ('buda-bendicion','piel','Piel y Torso (Rostro, Pecho y Manos)','#F5F3EF',2),
+  ('buda-bendicion','rizos','Rizos y Ushnisha (Cabello)','#DAD5CA',3),
+  ('buda-bendicion','collar','Collar de Perlas y Dije Floral','#FDFCFB',4),
+  ('buda-bendicion','detalles','Urna (Bindi) y Cenefas','#E7E3DA',5)
 ) AS z(slug, zone_key, zone_name, default_hex, sort_order) ON z.slug = p.slug;
 
 -- SEED PALETA (12 colores de taller)

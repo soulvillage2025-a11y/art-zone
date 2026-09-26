@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Calendar,
   Copy,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -297,6 +298,34 @@ function PersonalizarPage() {
     toast.info("Toda la figura se ha restablecido a los tonos de mármol base");
   };
 
+  const hasOriginalPreset = useMemo(() => {
+    return zones.some((z) => Boolean((z as any).original_hex));
+  }, [zones]);
+
+  const handleApplyOriginalColors = () => {
+    const originalState: Record<string, ZoneConfig> = {};
+    for (const z of zones) {
+      const orig = z as any;
+      if (orig.original_hex) {
+        originalState[z.zone_key] = {
+          color_name: orig.original_color_name || "Color Taller",
+          hex: orig.original_hex,
+          finish: (orig.original_finish as Finish) || "Brillante",
+          pantone: null,
+        };
+      } else {
+        originalState[z.zone_key] = {
+          color_name: "Blanco Mármol Original",
+          hex: z.default_hex,
+          finish: "Original",
+          pantone: "11-0601 TCX",
+        };
+      }
+    }
+    setCustomization(originalState);
+    toast.success("¡Colores de la pieza física de taller aplicados con éxito!");
+  };
+
   // Submit Order to backend
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,6 +429,17 @@ function PersonalizarPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {hasOriginalPreset && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleApplyOriginalColors}
+              className="gap-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Colores pieza de taller
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -407,7 +447,7 @@ function PersonalizarPage() {
             className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Restablecer figura
+            Restablecer a blanco
           </Button>
         </div>
       </div>
@@ -467,6 +507,45 @@ function PersonalizarPage() {
             <p className="mt-2 text-xs text-muted-foreground">
               💡 Haz clic en cualquier parte de la figura para seleccionarla directamente.
             </p>
+
+            {product.slug === "buda-bendicion" && (
+              <div className="mt-4 rounded-xl border border-border/80 bg-background/80 p-3.5 text-left text-xs shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    Pieza de Taller Original
+                  </span>
+                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/30">
+                    Foto de muestra
+                  </Badge>
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                  Pieza física pintada a mano en taller con <strong>Manto Ocre Dorado (#D9A520)</strong>, <strong>Piel Bronce Ébano (#161616)</strong>, <strong>Rizos Oro Viejo (#B08D3F)</strong> y <strong>Collar Blanco Perla (#F3F1EC)</strong>.
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleApplyOriginalColors}
+                    className="h-7 text-[11px] gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Cargar colores originales
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetAll}
+                    className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Mármol blanco
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

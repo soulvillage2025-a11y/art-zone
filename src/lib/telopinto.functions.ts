@@ -21,34 +21,107 @@ function publicClient() {
 }
 
 export const listProducts = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await publicClient()
-    .from("products")
-    .select("id, slug, name, category, description, svg_variant, base_price, price_per_zone, production_days")
-    .eq("active", true)
-    .order("sort_order");
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  const { EXTRA_PRODUCTS } = await import("@/lib/catalog-data");
+  let remoteProducts: Array<{
+    id: string;
+    slug: string;
+    name: string;
+    category: string;
+    description: string;
+    svg_variant: string;
+    base_price: number;
+    price_per_zone: number;
+    production_days: number;
+    image_url?: string;
+  }> = [];
+
+  try {
+    const { data, error } = await publicClient()
+      .from("products")
+      .select("id, slug, name, category, description, svg_variant, base_price, price_per_zone, production_days")
+      .eq("active", true)
+      .order("sort_order");
+    if (!error && data) {
+      remoteProducts = data;
+    }
+  } catch (err) {
+    console.warn("[listProducts] Supabase remote query failed, fallback to local:", err);
+  }
+
+  const existingSlugs = new Set(remoteProducts.map((p) => p.slug));
+  const extras = EXTRA_PRODUCTS.filter((p) => !existingSlugs.has(p.slug)).map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    category: p.category,
+    description: p.description,
+    svg_variant: p.svg_variant,
+    base_price: p.base_price,
+    price_per_zone: p.price_per_zone,
+    production_days: p.production_days,
+    image_url: p.image_url,
+  }));
+
+  return [...remoteProducts, ...extras];
 });
 
 export const getProductDetail = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) => z.object({ slug: z.string() }).parse(input))
   .handler(async ({ data }) => {
     const sb = publicClient();
-    const [{ data: product, error: pErr }, { data: palette, error: cErr }] = await Promise.all([
+    const { EXTRA_PRODUCTS } = await import("@/lib/catalog-data");
+
+    // Palette lookup
+    let palette: Array<{ id: string; name: string; hex: string; pantone: string | null; family: string }> = [];
+    try {
+      const { data: palData } = await sb
+        .from("palette_colors")
+        .select("id, name, hex, pantone, family")
+        .eq("active", true)
+        .order("sort_order");
+      if (palData) palette = palData;
+    } catch (err) {
+      console.warn("[getProductDetail] Palette remote error:", err);
+    }
+
+    // Check extra products first
+    const extra = EXTRA_PRODUCTS.find((p) => p.slug === data.slug);
+    if (extra) {
+      return {
+        product: {
+          id: extra.id,
+          slug: extra.slug,
+          name: extra.name,
+          category: extra.category,
+          description: extra.description,
+          svg_variant: extra.svg_variant,
+          base_price: extra.base_price,
+          price_per_zone: extra.price_per_zone,
+          production_days: extra.production_days,
+          image_url: extra.image_url,
+        },
+        zones: extra.zones.map((z) => ({
+          zone_key: z.zone_key,
+          zone_name: z.zone_name,
+          default_hex: z.default_hex,
+          sort_order: z.sort_order,
+          original_hex: z.original_hex,
+          original_color_name: z.original_color_name,
+          original_finish: z.original_finish,
+        })),
+        palette,
+      };
+    }
+
+    const [{ data: product, error: pErr }] = await Promise.all([
       sb
         .from("products")
         .select("id, slug, name, category, description, svg_variant, base_price, price_per_zone, production_days")
         .eq("slug", data.slug)
         .eq("active", true)
         .maybeSingle(),
-      sb
-        .from("palette_colors")
-        .select("id, name, hex, pantone, family")
-        .eq("active", true)
-        .order("sort_order"),
     ]);
     if (pErr) throw new Error(pErr.message);
-    if (cErr) throw new Error(cErr.message);
     if (!product) return null;
     const { data: zones, error: zErr } = await sb
       .from("product_zones")
@@ -56,7 +129,7 @@ export const getProductDetail = createServerFn({ method: "GET" })
       .eq("product_id", product.id)
       .order("sort_order");
     if (zErr) throw new Error(zErr.message);
-    return { product, zones: zones ?? [], palette: palette ?? [] };
+    return { product, zones: zones ?? [], palette };
   });
 
 const zoneSchema = z.object({
@@ -68,7 +141,7 @@ const zoneSchema = z.object({
 });
 
 const orderSchema = z.object({
-  product_id: z.string().uuid(),
+  product_id: z.string().min(1).max(100),
   customer_name: z.string().trim().min(2).max(100),
   customer_email: z.string().trim().email().max(255),
   customer_phone: z.string().trim().min(7).max(30),
@@ -101,19 +174,31 @@ export const createOrder = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sb = publicClient();
     const { saveStoredOrder } = await import("@/lib/order-storage.server");
+    const { EXTRA_PRODUCTS } = await import("@/lib/catalog-data");
 
-    const { data: product, error: pErr } = await sb
-      .from("products")
-      .select("id, name, base_price, price_per_zone")
-      .eq("id", data.product_id)
-      .maybeSingle();
-    if (pErr) throw new Error(pErr.message);
-    if (!product) throw new Error("Producto no disponible");
+    const extra = EXTRA_PRODUCTS.find((p) => p.id === data.product_id);
+    let product = extra
+      ? { id: extra.id, name: extra.name, base_price: extra.base_price, price_per_zone: extra.price_per_zone }
+      : null;
+    let zones: Array<{ zone_key: string; default_hex: string }> | null = extra ? extra.zones : null;
 
-    const { data: zones } = await sb
-      .from("product_zones")
-      .select("zone_key, default_hex")
-      .eq("product_id", product.id);
+    if (!product) {
+      const { data: remoteProduct, error: pErr } = await sb
+        .from("products")
+        .select("id, name, base_price, price_per_zone")
+        .eq("id", data.product_id)
+        .maybeSingle();
+      if (pErr) throw new Error(pErr.message);
+      if (!remoteProduct) throw new Error("Producto no disponible");
+      product = remoteProduct;
+
+      const { data: remoteZones } = await sb
+        .from("product_zones")
+        .select("zone_key, default_hex")
+        .eq("product_id", product.id);
+      zones = remoteZones ?? [];
+    }
+
     const defaults = new Map((zones ?? []).map((z) => [z.zone_key, z.default_hex.toLowerCase()]));
 
     const surcharge: Record<string, number> = {
