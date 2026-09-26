@@ -837,14 +837,14 @@ function PersonalizarPage() {
       {/* Success Dialog: Technical Sheet & Confirmation */}
       {completedOrder && (
         <Dialog open={Boolean(completedOrder)} onOpenChange={() => setCompletedOrder(null)}>
-          <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto print:max-w-none print:p-0">
+          <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto print:max-w-none print:max-h-none print:p-0">
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-start justify-between border-b border-border pb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-6 w-6 text-green-600" />
-                    <h2 className="text-2xl font-medium">¡Pedido Generado con Éxito!</h2>
+                    <h2 className="text-2xl font-medium tracking-tight">¡Pedido Generado con Éxito!</h2>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     La ficha técnica para el taller ha sido procesada correctamente.
@@ -872,69 +872,125 @@ function PersonalizarPage() {
                 </div>
               </div>
 
-              {/* Order Data Summary */}
-              <div className="grid grid-cols-2 gap-4 rounded-lg bg-stone-wash p-4 text-xs sm:grid-cols-4">
-                <div>
-                  <p className="text-muted-foreground">Cliente</p>
-                  <p className="font-semibold text-foreground">{completedOrder.customer_name}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">WhatsApp / Teléfono</p>
-                  <p className="font-semibold text-foreground">{completedOrder.customer_phone}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Método</p>
-                  <p className="font-semibold text-foreground">
-                    {completedOrder.delivery_method === "compra_pieza"
-                      ? "Pieza en taller"
-                      : "Cliente envía pieza"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Total Presupuestado</p>
-                  <p className="font-display text-lg text-primary">
-                    {formatCOP(completedOrder.estimated_total)}
-                  </p>
-                </div>
-              </div>
+              {/* 2-Column Responsive Body */}
+              <div className="grid gap-6 md:grid-cols-12">
+                {/* Left Column: Rendered Buddha Visual Reference */}
+                <div className="md:col-span-5 flex flex-col">
+                  <div className="gallery-panel flex-1 bg-stone-wash p-4 rounded-xl border border-border flex flex-col items-center justify-between text-center">
+                    <div className="w-full flex items-center justify-between border-b border-border/60 pb-2.5">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Tu pieza personalizada
+                      </span>
 
-              {/* Technical Sheet: Color breakdown */}
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Ficha Técnica de Pintura (Despiece por Zona)
-                </h3>
-                <div className="mt-2 divide-y divide-border rounded-lg border border-border overflow-hidden text-xs">
-                  {completedOrder.customization.map((c) => (
-                    <div key={c.zone_key} className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="h-5 w-5 shrink-0 rounded-full border border-black/20 shadow-xs"
-                          style={{ backgroundColor: c.hex }}
-                        />
-                        <div>
-                          <p className="font-medium text-foreground">{c.zone_name}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            Color: {c.color_name} ({c.hex})
-                          </p>
-                        </div>
+                      <div className="no-print flex rounded-md border border-border bg-background p-0.5 text-xs shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => setView("frontal")}
+                          className={`rounded-xs px-2.5 py-0.5 font-medium transition-colors ${
+                            view === "frontal"
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Frontal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setView("lateral")}
+                          className={`rounded-xs px-2.5 py-0.5 font-medium transition-colors ${
+                            view === "lateral"
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Lateral
+                        </button>
                       </div>
-                      <Badge variant="outline" className="font-mono text-[11px]">
-                        Acabado: {c.finish}
-                      </Badge>
                     </div>
-                  ))}
+
+                    <div className="my-3 flex items-center justify-center min-h-[260px] w-full">
+                      <BudaSvg
+                        variant={product.svg_variant}
+                        view={view}
+                        colors={svgColors}
+                        finishes={svgFinishes}
+                        className="h-64 w-auto max-w-full drop-shadow-md"
+                      />
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground">
+                      Referencia visual directa con pigmentos y acabados de taller.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column: Customer Info & Despiece */}
+                <div className="md:col-span-7 space-y-4">
+                  {/* Order Data Summary */}
+                  <div className="grid grid-cols-2 gap-3 rounded-xl bg-stone-wash p-3.5 border border-border text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Cliente:</p>
+                      <p className="font-semibold text-foreground">{completedOrder.customer_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">WhatsApp / Teléfono:</p>
+                      <p className="font-semibold text-foreground">{completedOrder.customer_phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Método:</p>
+                      <p className="font-semibold text-foreground">
+                        {completedOrder.delivery_method === "compra_pieza"
+                          ? "Pieza en taller"
+                          : "Cliente envía pieza"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Total Presupuestado:</p>
+                      <p className="font-display text-lg text-primary">
+                        {formatCOP(completedOrder.estimated_total)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Technical Sheet: Color breakdown */}
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Ficha Técnica de Pintura (Despiece por Zona)
+                    </h3>
+                    <div className="divide-y divide-border rounded-xl border border-border overflow-hidden text-xs bg-card">
+                      {completedOrder.customization.map((c) => (
+                        <div key={c.zone_key} className="flex items-center justify-between p-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="h-4 w-4 shrink-0 rounded-full border border-black/20 shadow-xs"
+                              style={{ backgroundColor: c.hex }}
+                            />
+                            <div>
+                              <p className="font-semibold text-foreground">{c.zone_name}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {c.color_name} • {c.hex}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="font-mono text-[11px]">
+                            {c.finish}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {completedOrder.notes && (
+                    <div className="rounded-xl border border-border p-3 text-xs bg-stone-wash/50">
+                      <p className="font-semibold text-muted-foreground">Instrucciones del cliente:</p>
+                      <p className="mt-1 text-foreground leading-relaxed">{completedOrder.notes}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {completedOrder.notes && (
-                <div className="rounded-lg border border-border p-3 text-xs">
-                  <p className="font-semibold text-muted-foreground">Instrucciones del cliente:</p>
-                  <p className="mt-1 text-foreground">{completedOrder.notes}</p>
-                </div>
-              )}
 
               {/* Action Buttons */}
-              <div className="no-print flex flex-wrap gap-2 pt-2">
+              <div className="no-print flex flex-wrap gap-2 pt-2 border-t border-border">
                 <Button
                   asChild
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"

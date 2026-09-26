@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { BudaSvg, type View } from "@/components/BudaSvg";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,8 +14,16 @@ import {
   Paintbrush,
   ShieldCheck,
   Send,
+  Printer,
+  MessageCircle,
 } from "lucide-react";
-import { formatCOP, statusLabel, ORDER_STATUSES, type OrderStatus } from "@/lib/telopinto";
+import {
+  formatCOP,
+  statusLabel,
+  ORDER_STATUSES,
+  type OrderStatus,
+  type Finish,
+} from "@/lib/telopinto";
 import { listOrders, updateOrderStatus } from "@/lib/telopinto.functions";
 import { toast } from "sonner";
 
@@ -53,6 +62,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  const [modalView, setModalView] = useState<View>("frontal");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
@@ -169,6 +179,47 @@ export function DashboardPage() {
       setUpdatingId(null);
     }
   };
+
+  // Derive SVG variant from product name
+  const selectedVariant = useMemo(() => {
+    if (!selectedOrder) return "buda_completo";
+    const name = (selectedOrder.product_name || "").toLowerCase();
+    if (name.includes("sonriente")) return "buda_sonriente";
+    if (name.includes("cabeza") || name.includes("zen")) return "cabeza_zen";
+    return "buda_completo";
+  }, [selectedOrder]);
+
+  // Derive colors and finishes map for BudaSvg
+  const { selectedColors, selectedFinishes } = useMemo(() => {
+    if (!selectedOrder) return { selectedColors: {}, selectedFinishes: {} };
+
+    const colorsMap: Record<string, string> = {};
+    const finishesMap: Record<string, Finish> = {};
+
+    for (const c of selectedOrder.customization || []) {
+      let key = c.zone_key;
+      if (!key) {
+        const name = (c.zone_name || "").toLowerCase();
+        if (name.includes("pedestal") || name.includes("base")) key = "base";
+        else if (
+          name.includes("rizos") ||
+          name.includes("cabello") ||
+          name.includes("cabeza")
+        )
+          key = "rizos";
+        else if (name.includes("rostro") || name.includes("cara")) key = "rostro";
+        else if (name.includes("manto") || name.includes("túnica")) key = "manto";
+        else if (name.includes("pecho") || name.includes("vientre")) key = "pecho";
+        else if (name.includes("aura") || name.includes("halo")) key = "aura";
+      }
+      if (key) {
+        colorsMap[key] = c.hex;
+        finishesMap[key] = (c.finish as Finish) || "Original";
+      }
+    }
+
+    return { selectedColors: colorsMap, selectedFinishes: finishesMap };
+  }, [selectedOrder]);
 
   // Metrics
   const metrics = useMemo(() => {
@@ -347,7 +398,10 @@ export function DashboardPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedOrder(o)}
+                        onClick={() => {
+                          setSelectedOrder(o);
+                          setModalView("frontal");
+                        }}
                         className="h-8 gap-1.5 text-xs"
                       >
                         <Eye className="h-3.5 w-3.5" />
@@ -362,104 +416,198 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Order Detail Modal */}
+      {/* Order Detail Modal with Visual Buddha Reference */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="gallery-panel w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 bg-card">
-            <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="gallery-panel w-full max-w-4xl max-h-[92vh] overflow-y-auto p-6 bg-card print:max-w-none print:max-h-none print:p-0">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-border pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-medium">Ficha Técnica: {selectedOrder.order_code}</h3>
+                  <h3 className="text-2xl font-medium tracking-tight">
+                    Ficha Técnica: {selectedOrder.order_code}
+                  </h3>
                   {getStatusBadge(selectedOrder.status)}
                 </div>
-                <p className="text-xs text-muted-foreground">{selectedOrder.product_name}</p>
+                <p className="text-sm text-muted-foreground">{selectedOrder.product_name}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
-                Cerrar
-              </Button>
+
+              <div className="no-print flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.print()}
+                  className="gap-1.5 text-xs"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Imprimir Ficha
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
+                  Cerrar
+                </Button>
+              </div>
             </div>
 
-            <div className="mt-4 space-y-4 text-xs">
-              {/* Client Info Grid */}
-              <div className="grid grid-cols-2 gap-3 bg-stone-wash p-3.5 rounded-lg">
-                <div>
-                  <span className="text-muted-foreground">Cliente:</span>
-                  <p className="font-medium text-foreground">{selectedOrder.customer_name}</p>
+            {/* Modal Body: 2-Column Responsive Layout */}
+            <div className="mt-5 grid gap-6 md:grid-cols-12">
+              {/* Left Column (5 cols): Rendered Figure (Visual Reference) */}
+              <div className="md:col-span-5 flex flex-col">
+                <div className="gallery-panel flex-1 bg-stone-wash p-4 rounded-xl border border-border flex flex-col items-center justify-between text-center">
+                  <div className="w-full flex items-center justify-between border-b border-border/60 pb-2.5">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Paintbrush className="h-3.5 w-3.5 text-primary" />
+                      Referencia Visual
+                    </span>
+
+                    <div className="no-print flex rounded-md border border-border bg-background p-0.5 text-xs shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setModalView("frontal")}
+                        className={`rounded-xs px-2.5 py-0.5 font-medium transition-colors ${
+                          modalView === "frontal"
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Frontal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModalView("lateral")}
+                        className={`rounded-xs px-2.5 py-0.5 font-medium transition-colors ${
+                          modalView === "lateral"
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Lateral
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* The Rendered Buddha SVG */}
+                  <div className="my-4 flex items-center justify-center min-h-[300px] w-full">
+                    <BudaSvg
+                      variant={selectedVariant}
+                      view={modalView}
+                      colors={selectedColors}
+                      finishes={selectedFinishes}
+                      className="h-72 w-auto max-w-full drop-shadow-md transition-all"
+                    />
+                  </div>
+
+                  <div className="w-full rounded-lg bg-background/80 p-2.5 border border-border/50 text-[11px] text-muted-foreground">
+                    💡 Modelo pintado con los colores y acabados exactos seleccionados por el cliente.
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Teléfono / WhatsApp:</span>
-                  <p className="font-medium text-foreground">{selectedOrder.customer_phone}</p>
+              </div>
+
+              {/* Right Column (7 cols): Client Data, Status Changer & Despiece Table */}
+              <div className="md:col-span-7 space-y-4">
+                {/* Client Info Grid */}
+                <div className="grid grid-cols-2 gap-3 bg-stone-wash p-3.5 rounded-xl border border-border text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Cliente:</span>
+                    <p className="font-semibold text-foreground text-sm">
+                      {selectedOrder.customer_name}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Teléfono / WhatsApp:</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="font-semibold text-foreground">
+                        {selectedOrder.customer_phone}
+                      </span>
+                      <a
+                        href={`https://wa.me/${selectedOrder.customer_phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-700"
+                        title="Chat de WhatsApp"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Correo:</span>
+                    <p className="font-medium text-foreground truncate">
+                      {selectedOrder.customer_email}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Presupuesto Total:</span>
+                    <p className="font-display text-lg text-primary">
+                      {formatCOP(selectedOrder.estimated_total)}
+                    </p>
+                  </div>
+                  {selectedOrder.shipping_address && (
+                    <div className="col-span-2 border-t border-border/50 pt-2">
+                      <span className="text-muted-foreground">Dirección de despacho:</span>
+                      <p className="font-medium text-foreground">{selectedOrder.shipping_address}</p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Correo:</span>
-                  <p className="font-medium text-foreground">{selectedOrder.customer_email}</p>
+
+                {/* Status Changer in Modal */}
+                <div className="no-print flex items-center justify-between rounded-xl border border-border p-3 text-xs bg-card">
+                  <span className="font-medium">Cambiar estado del pedido:</span>
+                  <select
+                    value={selectedOrder.status}
+                    onChange={(e) =>
+                      handleChangeStatus(
+                        selectedOrder.id || selectedOrder.order_code,
+                        e.target.value
+                      )
+                    }
+                    className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none"
+                  >
+                    {ORDER_STATUSES.map((s) => (
+                      <option key={s.key} value={s.key}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                {/* Technical Despiece Table */}
                 <div>
-                  <span className="text-muted-foreground">Presupuesto Total:</span>
-                  <p className="font-display text-lg text-primary">
-                    {formatCOP(selectedOrder.estimated_total)}
+                  <p className="font-semibold text-muted-foreground uppercase tracking-wider text-xs mb-2">
+                    Despiece de color por zona (Taller)
                   </p>
+                  <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-card text-xs">
+                    {(selectedOrder.customization ?? []).map((c, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-3 hover:bg-secondary/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="h-5 w-5 shrink-0 rounded-full border border-black/20 shadow-xs"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                          <div>
+                            <p className="font-semibold text-foreground">{c.zone_name}</p>
+                            <p className="text-[11px] text-muted-foreground font-mono">
+                              {c.color_name} • {c.hex}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="font-mono text-[11px]">
+                          Acabado: {c.finish}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {selectedOrder.shipping_address && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Dirección de entrega:</span>
-                    <p className="font-medium text-foreground">{selectedOrder.shipping_address}</p>
+
+                {selectedOrder.notes && (
+                  <div className="p-3 border border-border rounded-xl bg-stone-wash/60 text-xs">
+                    <p className="font-semibold text-muted-foreground">Notas del cliente:</p>
+                    <p className="mt-1 text-foreground leading-relaxed">{selectedOrder.notes}</p>
                   </div>
                 )}
               </div>
-
-              {/* Status Selector in Modal */}
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <span className="font-medium">Cambiar estado del pedido:</span>
-                <select
-                  value={selectedOrder.status}
-                  onChange={(e) =>
-                    handleChangeStatus(selectedOrder.id || selectedOrder.order_code, e.target.value)
-                  }
-                  className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none"
-                >
-                  {ORDER_STATUSES.map((s) => (
-                    <option key={s.key} value={s.key}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Color Breakdown */}
-              <div>
-                <p className="font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Despiece de color por zona (Taller)
-                </p>
-                <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
-                  {(selectedOrder.customization ?? []).map((c, i) => (
-                    <div key={i} className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="h-5 w-5 shrink-0 rounded-full border border-black/20 shadow-xs"
-                          style={{ backgroundColor: c.hex }}
-                        />
-                        <div>
-                          <p className="font-medium text-foreground">{c.zone_name}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {c.color_name} • {c.hex}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="font-mono text-[11px]">
-                        Acabado: {c.finish}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {selectedOrder.notes && (
-                <div className="p-3 border border-border rounded-lg bg-stone-wash/50">
-                  <p className="font-semibold text-muted-foreground">Notas del cliente:</p>
-                  <p className="mt-1 text-foreground leading-relaxed">{selectedOrder.notes}</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
