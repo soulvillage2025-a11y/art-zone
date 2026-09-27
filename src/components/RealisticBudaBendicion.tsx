@@ -92,98 +92,28 @@ export function RealisticBudaBendicion({
 
   const activePaths = view === "frontal" ? frontalPaths : lateralPaths;
 
-  // Elegantly positioned selector callouts (cleanly placed outside to never obscure face or details)
-  const hotspots: Record<
-    string,
-    {
-      badgeX: number;
-      badgeY: number;
-      label: string;
-      targetX: number;
-      targetY: number;
-    }
-  > =
+  // Hotspots positioned directly on each zone
+  const hotspots: Record<string, { x: number; y: number; label: string }> =
     view === "frontal"
       ? {
-          rizos: {
-            badgeX: 635,
-            badgeY: 80,
-            label: "Rizos",
-            targetX: 535,
-            targetY: 80,
-          },
-          detalles: {
-            badgeX: 645,
-            badgeY: 175,
-            label: "Urna (Bindi)",
-            targetX: 508,
-            targetY: 175,
-          },
-          collar: {
-            badgeX: 645,
-            badgeY: 355,
-            label: "Collar",
-            targetX: 505,
-            targetY: 392,
-          },
-          piel: {
-            badgeX: 200,
-            badgeY: 475,
-            label: "Piel y Torso",
-            targetX: 320,
-            targetY: 460,
-          },
-          manto: {
-            badgeX: 775,
-            badgeY: 560,
-            label: "Manto / Túnica",
-            targetX: 685,
-            targetY: 550,
-          },
+          rizos: { x: 508, y: 145, label: "Rizos" },
+          detalles: { x: 508, y: 205, label: "Urna" },
+          collar: { x: 508, y: 390, label: "Collar" },
+          piel: { x: 385, y: 475, label: "Piel" },
+          manto: { x: 645, y: 530, label: "Manto" },
         }
       : {
-          rizos: {
-            badgeX: 630,
-            badgeY: 85,
-            label: "Rizos",
-            targetX: 515,
-            targetY: 85,
-          },
-          detalles: {
-            badgeX: 600,
-            badgeY: 185,
-            label: "Urna",
-            targetX: 435,
-            targetY: 195,
-          },
-          collar: {
-            badgeX: 620,
-            badgeY: 360,
-            label: "Collar",
-            targetX: 485,
-            targetY: 380,
-          },
-          piel: {
-            badgeX: 215,
-            badgeY: 480,
-            label: "Piel y Torso",
-            targetX: 340,
-            targetY: 480,
-          },
-          manto: {
-            badgeX: 770,
-            badgeY: 560,
-            label: "Manto / Túnica",
-            targetX: 650,
-            targetY: 560,
-          },
+          rizos: { x: 490, y: 110, label: "Rizos" },
+          detalles: { x: 435, y: 195, label: "Urna" },
+          collar: { x: 480, y: 360, label: "Collar" },
+          piel: { x: 410, y: 490, label: "Piel" },
+          manto: { x: 630, y: 560, label: "Manto" },
         };
 
   const renderZoneOverlay = (zoneKey: string, pathD: string) => {
     const rawColor = colors[zoneKey];
     const isDefault = isDefaultMarbleColor(zoneKey, rawColor);
     const finish = finishes[zoneKey] ?? "Original";
-    const isActive = activeZone === zoneKey;
 
     const fillColor = rawColor || "#EFEDE7";
     const isDark =
@@ -229,30 +159,6 @@ export function RealisticBudaBendicion({
             pointerEvents="none"
           />
         )}
-
-        {/* Active Zone: Soft luminous zone illumination & sleek contour */}
-        {isActive && (
-          <>
-            {/* Luminous soft highlight over the entire active zone */}
-            <path
-              d={pathD}
-              fill="#3B82F6"
-              style={{ mixBlendMode: "screen" }}
-              opacity={0.12}
-              pointerEvents="none"
-            />
-            {/* Smooth glowing outline precisely tracing zone boundary */}
-            <path
-              d={pathD}
-              fill="none"
-              stroke="#2563EB"
-              strokeWidth={3}
-              opacity={0.88}
-              filter="url(#zone-glow)"
-              pointerEvents="none"
-            />
-          </>
-        )}
       </g>
     );
   };
@@ -279,12 +185,6 @@ export function RealisticBudaBendicion({
           <stop offset="60%" stopColor="#000000" stopOpacity="0.35" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0.65" />
         </linearGradient>
-
-        {/* Soft glow for active selector contour */}
-        <filter id="zone-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
       </defs>
 
       {/* 1. Base High-Definition Sculpture Photograph */}
@@ -320,110 +220,81 @@ export function RealisticBudaBendicion({
           }
           className="transition-all duration-300"
         />
-        {activeZone === "detalles" && (
-          <circle
-            cx={view === "frontal" ? 508 : 435}
-            cy={view === "frontal" ? 175 : 195}
-            r={14}
-            fill="none"
-            stroke="#2563EB"
-            strokeWidth={3}
-            opacity={0.9}
-            filter="url(#zone-glow)"
-            pointerEvents="none"
-          />
-        )}
       </g>
 
-      {/* 3. Elegantly Positioned Interactive Callout Selectors */}
+      {/* 3. Interactive Selector Hotpoint Badges on the Sculpture */}
       {interactive && (
         <g className="select-none">
           {Object.entries(hotspots).map(([zoneKey, spot]) => {
             const isActive = activeZone === zoneKey;
             const currentColor = colors[zoneKey] || "#EFEDE7";
-            const textWidth = spot.label.length * 7.5 + 24;
 
             return (
               <g
                 key={zoneKey}
-                className="cursor-pointer transition-all duration-200 group"
+                className="cursor-pointer transition-transform duration-200 hover:scale-110"
                 onClick={(e) => {
                   e.stopPropagation();
                   onZoneClick?.(zoneKey);
                 }}
               >
-                {/* Delicate connector line from callout badge to target zone */}
-                <line
-                  x1={spot.badgeX}
-                  y1={spot.badgeY}
-                  x2={spot.targetX}
-                  y2={spot.targetY}
-                  stroke={isActive ? "#2563EB" : "rgba(0,0,0,0.22)"}
-                  strokeWidth={isActive ? 2 : 1.2}
-                  strokeDasharray={isActive ? "none" : "3 3"}
-                  className="transition-colors duration-200"
-                />
-
-                {/* Target anchor point dot on the actual sculpture */}
-                <circle
-                  cx={spot.targetX}
-                  cy={spot.targetY}
-                  r={isActive ? 5 : 3.5}
-                  fill={isActive ? "#2563EB" : "#FFFFFF"}
-                  stroke={isActive ? "#FFFFFF" : "rgba(0,0,0,0.3)"}
-                  strokeWidth={1.5}
-                  className="transition-all duration-200"
-                />
-
                 {/* Ping wave when active */}
                 {isActive && (
                   <circle
-                    cx={spot.badgeX}
-                    cy={spot.badgeY}
-                    r={20}
+                    cx={spot.x}
+                    cy={spot.y}
+                    r={24}
                     fill="#2563EB"
-                    opacity={0.3}
+                    opacity={0.35}
                     className="animate-ping"
                   />
                 )}
 
-                {/* Callout badge background pill */}
-                <rect
-                  x={spot.badgeX - 16}
-                  y={spot.badgeY - 14}
-                  width={textWidth + 28}
-                  height={28}
-                  rx={14}
-                  ry={14}
-                  fill={isActive ? "#1E293B" : "rgba(255,255,255,0.96)"}
-                  stroke={isActive ? "#2563EB" : "rgba(0,0,0,0.14)"}
-                  strokeWidth={isActive ? 2 : 1}
-                  filter="drop-shadow(0 2px 6px rgba(0,0,0,0.18))"
-                  className="transition-all duration-200 group-hover:scale-105"
-                />
-
-                {/* Color swatch circle */}
+                {/* Outer badge ring */}
                 <circle
-                  cx={spot.badgeX}
-                  cy={spot.badgeY}
-                  r={8.5}
-                  fill={currentColor}
-                  stroke={isActive ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.2)"}
-                  strokeWidth={1.2}
+                  cx={spot.x}
+                  cy={spot.y}
+                  r={16}
+                  fill="#FFFFFF"
+                  stroke={isActive ? "#2563EB" : "rgba(0,0,0,0.18)"}
+                  strokeWidth={isActive ? 3.5 : 1.5}
+                  filter="drop-shadow(0 2px 5px rgba(0,0,0,0.25))"
                 />
 
-                {/* Label text */}
-                <text
-                  x={spot.badgeX + 16}
-                  y={spot.badgeY + 4}
-                  fontSize={12}
-                  fontWeight={isActive ? "700" : "600"}
-                  fill={isActive ? "#FFFFFF" : "#1E293B"}
-                  fontFamily="system-ui, sans-serif"
-                  letterSpacing="0.2px"
-                >
-                  {spot.label}
-                </text>
+                {/* Color swatch circle inside badge */}
+                <circle
+                  cx={spot.x}
+                  cy={spot.y}
+                  r={10}
+                  fill={currentColor}
+                  stroke="rgba(0,0,0,0.15)"
+                  strokeWidth={1}
+                />
+
+                {/* Floating pill with zone name */}
+                <g transform={`translate(${spot.x + 22}, ${spot.y - 13})`}>
+                  <rect
+                    rx={6}
+                    ry={6}
+                    width={spot.label.length * 8 + 18}
+                    height={26}
+                    fill={isActive ? "#1E293B" : "rgba(255,255,255,0.92)"}
+                    stroke={isActive ? "#2563EB" : "rgba(0,0,0,0.14)"}
+                    strokeWidth={isActive ? 1.5 : 1}
+                    filter="drop-shadow(0 2px 4px rgba(0,0,0,0.15))"
+                  />
+                  <text
+                    x={9}
+                    y={17}
+                    fontSize={12}
+                    fontWeight={isActive ? "700" : "600"}
+                    fill={isActive ? "#FFFFFF" : "#1E293B"}
+                    fontFamily="system-ui, sans-serif"
+                    letterSpacing="0.2px"
+                  >
+                    {spot.label}
+                  </text>
+                </g>
               </g>
             );
           })}
