@@ -1,4 +1,5 @@
 import type { Finish } from "@/lib/telopinto";
+import { RealisticBudaBendicion } from "./RealisticBudaBendicion";
 
 type Shape =
   | { zone: string; type: "path"; d: string }
@@ -300,6 +301,19 @@ export function BudaSvg({
   onZoneClick,
   className,
 }: Props) {
+  if (variant === "buda_bendicion") {
+    return (
+      <RealisticBudaBendicion
+        view={view}
+        colors={colors}
+        finishes={finishes}
+        activeZone={activeZone}
+        onZoneClick={onZoneClick}
+        className={className}
+      />
+    );
+  }
+
   const shapes = (VARIANTS[variant] ?? budaCompleto)[view];
   const interactive = Boolean(onZoneClick);
 

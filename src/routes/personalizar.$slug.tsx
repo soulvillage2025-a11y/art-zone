@@ -500,12 +500,41 @@ function PersonalizarPage() {
                 onZoneClick={(zone) => {
                   setActiveZoneKey(zone);
                 }}
-                className="h-[420px] w-auto max-w-full drop-shadow-lg transition-transform duration-300 hover:scale-[1.01]"
+                className="h-[440px] md:h-[480px] w-auto max-w-full drop-shadow-xl transition-transform duration-300 hover:scale-[1.01]"
               />
             </div>
 
+            {/* Quick zone tabs right below figure */}
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 border-t border-border/60 pt-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+                Zonas:
+              </span>
+              {zones.map((z) => {
+                const isSelected = z.zone_key === activeZoneKey;
+                const cfg = customization[z.zone_key];
+                return (
+                  <button
+                    key={z.zone_key}
+                    type="button"
+                    onClick={() => setActiveZoneKey(z.zone_key)}
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/40 ring-offset-1"
+                        : "bg-background border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 rounded-full border border-black/25 shrink-0 shadow-2xs"
+                      style={{ backgroundColor: cfg?.hex ?? z.default_hex }}
+                    />
+                    <span>{z.zone_name.split(" ")[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <p className="mt-2 text-xs text-muted-foreground">
-              💡 Haz clic en cualquier parte de la figura para seleccionarla directamente.
+              💡 Haz clic en cualquier parte de la figura o en sus etiquetas para seleccionarla.
             </p>
 
             {product.slug === "buda-bendicion" && (
