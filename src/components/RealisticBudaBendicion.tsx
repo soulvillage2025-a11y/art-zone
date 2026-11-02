@@ -78,8 +78,6 @@ export function RealisticBudaBendicion({
 
   const urnaCoords =
     view === "frontal" ? { cx: 508, cy: 175 } : { cx: 458, cy: 198 };
-  const isDetallesSelected = activeZone === "detalles";
-  const isDetallesHovered = hoveredZone === "detalles";
   const rawDetallesColor = colors["detalles"];
   const isDetallesDefault = isDefaultMarbleColor("detalles", rawDetallesColor);
 
@@ -133,73 +131,21 @@ export function RealisticBudaBendicion({
     );
   };
 
-  // Layer 2: Interactive Hit Targets, Hover Tint & Active Selection Outlines
+  // Layer 2: Transparent Interactive Hit Target (without intrusive outlines/shading on the sculpture)
   const renderZoneInteraction = (zoneKey: string, pathD: string) => {
     if (!pathD) return null;
-    const isSelected = activeZone === zoneKey;
-    const isHovered = hoveredZone === zoneKey;
 
     return (
-      <g
+      <path
         key={`interactive-${zoneKey}`}
+        d={pathD}
+        fill="transparent"
+        pointerEvents="all"
         className={interactive ? "cursor-pointer" : undefined}
         onClick={interactive ? () => onZoneClick?.(zoneKey) : undefined}
         onMouseEnter={interactive ? () => setHoveredZone(zoneKey) : undefined}
         onMouseLeave={interactive ? () => setHoveredZone(null) : undefined}
-      >
-        {/* Always present transparent hit area so clicking the sculpture works even in pure marble white */}
-        <path
-          d={pathD}
-          fill="transparent"
-          pointerEvents="all"
-        />
-
-        {/* Hover feedback: subtle blue glow & dashed outline when hovered but not active */}
-        {interactive && isHovered && !isSelected && (
-          <path
-            d={pathD}
-            fill="rgba(37, 99, 235, 0.08)"
-            stroke="#3B82F6"
-            strokeWidth={1.8}
-            strokeDasharray="4 3"
-            pointerEvents="none"
-            className="transition-all duration-150"
-          />
-        )}
-
-        {/* Active Selection feedback: high-contrast double outline (white base + pulsing blue dash) */}
-        {isSelected && (
-          <g pointerEvents="none">
-            {/* Soft inner tint so user instantly sees full zone coverage */}
-            <path
-              d={pathD}
-              fill="rgba(37, 99, 235, 0.14)"
-            />
-            {/* White halo outline for high contrast on dark finishes */}
-            <path
-              d={pathD}
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth={4.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.7}
-            />
-            {/* Vibrant pulsing blue dashed outline */}
-            <path
-              d={pathD}
-              fill="none"
-              stroke="#2563EB"
-              strokeWidth={2.5}
-              strokeDasharray="6 4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="animate-pulse"
-              filter="url(#buda-zone-glow)"
-            />
-          </g>
-        )}
-      </g>
+      />
     );
   };
 
@@ -215,11 +161,6 @@ export function RealisticBudaBendicion({
         <clipPath id={`buda-statue-clip-${view}`}>
           <path d={activePaths.silhouette} />
         </clipPath>
-
-        {/* Soft glowing drop shadow for active zone outline */}
-        <filter id="buda-zone-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#2563EB" floodOpacity="0.6" />
-        </filter>
 
         {/* Radial highlight for glossy lacquer */}
         <radialGradient id="buda-gloss-shine" cx="0.45" cy="0.35" r="0.75">
@@ -268,7 +209,7 @@ export function RealisticBudaBendicion({
         />
       )}
 
-      {/* 3. Clipped Interactive Hit Areas & Selection Highlights */}
+      {/* 3. Transparent Interactive Hit Areas (clean interaction without outlines or shading) */}
       <g clipPath={`url(#buda-statue-clip-${view})`}>
         {renderZoneInteraction("manto", activePaths.manto)}
         {renderZoneInteraction("piel", activePaths.piel)}
@@ -277,55 +218,20 @@ export function RealisticBudaBendicion({
         {renderZoneInteraction("detalles", activePaths.detalles)}
       </g>
 
-      {/* Forehead Urna Interactive & Selection */}
-      <g className={interactive ? "cursor-pointer" : undefined}>
-        <circle
-          cx={urnaCoords.cx}
-          cy={urnaCoords.cy}
-          r={12}
-          fill="transparent"
-          pointerEvents="all"
-          onClick={interactive ? () => onZoneClick?.("detalles") : undefined}
-          onMouseEnter={interactive ? () => setHoveredZone("detalles") : undefined}
-          onMouseLeave={interactive ? () => setHoveredZone(null) : undefined}
-        />
-        {interactive && isDetallesHovered && !isDetallesSelected && (
-          <circle
-            cx={urnaCoords.cx}
-            cy={urnaCoords.cy}
-            r={10}
-            fill="rgba(37,99,235,0.12)"
-            stroke="#3B82F6"
-            strokeWidth={1.5}
-            pointerEvents="none"
-          />
-        )}
-        {isDetallesSelected && (
-          <g pointerEvents="none">
-            <circle
-              cx={urnaCoords.cx}
-              cy={urnaCoords.cy}
-              r={11}
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth={3.5}
-              opacity={0.7}
-            />
-            <circle
-              cx={urnaCoords.cx}
-              cy={urnaCoords.cy}
-              r={11}
-              fill="rgba(37,99,235,0.2)"
-              stroke="#2563EB"
-              strokeWidth={2}
-              strokeDasharray="3 2"
-              className="animate-pulse"
-            />
-          </g>
-        )}
-      </g>
+      {/* Forehead Urna Interactive */}
+      <circle
+        cx={urnaCoords.cx}
+        cy={urnaCoords.cy}
+        r={14}
+        fill="transparent"
+        pointerEvents="all"
+        className={interactive ? "cursor-pointer" : undefined}
+        onClick={interactive ? () => onZoneClick?.("detalles") : undefined}
+        onMouseEnter={interactive ? () => setHoveredZone("detalles") : undefined}
+        onMouseLeave={interactive ? () => setHoveredZone(null) : undefined}
+      />
 
-      {/* 4. Interactive Minimalist Hotpoints */}
+      {/* 4. Interactive Minimalist Hotpoints (pure reference point indicators) */}
       {interactive && (
         <g className="select-none">
           {Object.entries(hotspots).map(([zoneKey, spot]) => {
@@ -355,7 +261,7 @@ export function RealisticBudaBendicion({
                     r={20}
                     fill="#2563EB"
                     opacity={0.35}
-                    className="animate-ping"
+                    className="animate-ping pointer-events-none"
                   />
                 )}
 
@@ -390,7 +296,7 @@ export function RealisticBudaBendicion({
                         ? `translate(${spot.x - labelWidth - 14}, ${spot.y - 12})`
                         : `translate(${spot.x + 16}, ${spot.y - 12})`
                     }
-                    className="transition-opacity duration-200"
+                    className="transition-opacity duration-200 pointer-events-none"
                   >
                     <rect
                       rx={6}
