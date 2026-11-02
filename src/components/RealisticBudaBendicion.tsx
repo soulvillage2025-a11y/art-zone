@@ -231,7 +231,7 @@ export function RealisticBudaBendicion({
         onMouseLeave={interactive ? () => setHoveredZone(null) : undefined}
       />
 
-      {/* 4. Interactive Minimalist Hotpoints (pure reference point indicators) */}
+      {/* 4. Interactive Minimalist Hotpoints: glowing bright green when selected */}
       {interactive && (
         <g className="select-none">
           {Object.entries(hotspots).map(([zoneKey, spot]) => {
@@ -253,37 +253,29 @@ export function RealisticBudaBendicion({
                 onMouseEnter={() => setHoveredZone(zoneKey)}
                 onMouseLeave={() => setHoveredZone(null)}
               >
-                {/* Ping wave when active */}
-                {isActive && (
-                  <circle
-                    cx={spot.x}
-                    cy={spot.y}
-                    r={20}
-                    fill="#2563EB"
-                    opacity={0.35}
-                    className="animate-ping pointer-events-none"
-                  />
-                )}
-
-                {/* Outer badge ring */}
+                {/* Outer badge ring: turns radiant bright green when selected */}
                 <circle
                   cx={spot.x}
                   cy={spot.y}
                   r={isActive ? 13 : 10.5}
-                  fill="#FFFFFF"
-                  stroke={isActive ? "#2563EB" : isHovered ? "#3B82F6" : "rgba(0,0,0,0.22)"}
-                  strokeWidth={isActive ? 3 : 1.5}
-                  filter="drop-shadow(0 2px 5px rgba(0,0,0,0.28))"
+                  fill={isActive ? "#22C55E" : "#FFFFFF"}
+                  stroke={isActive ? "#FFFFFF" : isHovered ? "#22C55E" : "rgba(0,0,0,0.22)"}
+                  strokeWidth={isActive ? 2.5 : 1.5}
+                  filter={
+                    isActive
+                      ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.85)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))"
+                      : "drop-shadow(0 2px 5px rgba(0,0,0,0.28))"
+                  }
                   className="transition-all duration-200"
                 />
 
-                {/* Color swatch circle inside badge */}
+                {/* Center dot inside badge: white core dot when active, color swatch when inactive */}
                 <circle
                   cx={spot.x}
                   cy={spot.y}
-                  r={isActive ? 8 : 6}
-                  fill={currentColor}
-                  stroke="rgba(0,0,0,0.18)"
+                  r={isActive ? 5 : 6}
+                  fill={isActive ? "#FFFFFF" : currentColor}
+                  stroke={isActive ? "none" : "rgba(0,0,0,0.18)"}
                   strokeWidth={1}
                   className="transition-all duration-200"
                 />
@@ -303,9 +295,9 @@ export function RealisticBudaBendicion({
                       ry={6}
                       width={labelWidth}
                       height={24}
-                      fill={isActive ? "#1E293B" : "rgba(255,255,255,0.96)"}
-                      stroke={isActive ? "#2563EB" : "rgba(0,0,0,0.18)"}
-                      strokeWidth={isActive ? 1.5 : 1}
+                      fill={isActive ? "#0F172A" : "rgba(255,255,255,0.96)"}
+                      stroke={isActive ? "#22C55E" : "rgba(0,0,0,0.18)"}
+                      strokeWidth={isActive ? 2 : 1}
                       filter="drop-shadow(0 2px 6px rgba(0,0,0,0.2))"
                     />
                     <text
@@ -313,7 +305,7 @@ export function RealisticBudaBendicion({
                       y={16}
                       fontSize={11}
                       fontWeight={isActive ? "700" : "600"}
-                      fill={isActive ? "#FFFFFF" : "#1E293B"}
+                      fill={isActive ? "#4ADE80" : "#1E293B"}
                       fontFamily="system-ui, sans-serif"
                       letterSpacing="0.2px"
                     >
