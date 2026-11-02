@@ -209,9 +209,10 @@ export const createOrder = createServerFn({ method: "POST" })
     };
     let total = product.base_price;
     for (const z of data.customization) {
-      if (defaults.get(z.zone_key) !== z.hex.toLowerCase()) {
-        total += product.price_per_zone + (surcharge[z.finish] ?? 0);
-      }
+      const isColorModified = defaults.get(z.zone_key) !== z.hex.toLowerCase();
+      const finishExtra = surcharge[z.finish] ?? 0;
+      const zoneCost = (isColorModified ? (product.price_per_zone ?? 0) : 0) + finishExtra;
+      total += zoneCost;
     }
 
     const year = new Date().getFullYear();

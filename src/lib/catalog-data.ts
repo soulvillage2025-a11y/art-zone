@@ -32,7 +32,7 @@ export const EXTRA_PRODUCTS: ExtraProduct[] = [
       "Escultura sagrada en postura de loto con mudra de bendición y protección (Abhaya Mudra), túnica drapeada con finos relieves y gargantilla floral. Tallada en mármol blanco, lista para intervenir con la paleta de taller.",
     svg_variant: "buda_bendicion",
     base_price: 195000,
-    price_per_zone: 35000,
+    price_per_zone: 0,
     production_days: 7,
     image_url: "/images/buda-bendicion-blanco.jpg",
     reference_image_url: "/images/buda-bendicion-original.jpg",

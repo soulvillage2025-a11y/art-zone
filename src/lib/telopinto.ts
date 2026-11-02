@@ -47,8 +47,10 @@ export function estimateTotal(
 ) {
   let total = basePrice;
   for (const s of selections) {
-    const isDefault = (defaults[s.zone_key] ?? "").toLowerCase() === s.hex.toLowerCase();
-    if (!isDefault) total += pricePerZone + FINISH_SURCHARGE[s.finish];
+    const isColorModified = (defaults[s.zone_key] ?? "").toLowerCase() !== s.hex.toLowerCase();
+    const finishExtra = FINISH_SURCHARGE[s.finish] ?? 0;
+    const zoneCost = (isColorModified ? (pricePerZone ?? 0) : 0) + finishExtra;
+    total += zoneCost;
   }
   return total;
 }

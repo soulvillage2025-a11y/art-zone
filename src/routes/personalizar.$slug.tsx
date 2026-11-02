@@ -775,8 +775,9 @@ function PersonalizarPage() {
               </div>
 
               {modifiedZones.map((m) => {
-                const finishExtra = FINISH_SURCHARGE[m.finish];
-                const zoneTotal = product.price_per_zone + finishExtra;
+                const finishExtra = FINISH_SURCHARGE[m.finish] ?? 0;
+                const isColorModified = (defaults[m.zone_key] ?? "").toLowerCase() !== m.hex.toLowerCase();
+                const zoneTotal = (isColorModified ? (product.price_per_zone ?? 0) : 0) + finishExtra;
                 return (
                   <div key={m.zone_key} className="flex justify-between text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
@@ -788,7 +789,15 @@ function PersonalizarPage() {
                         {m.zone_name}: {m.color_name} ({m.finish})
                       </span>
                     </span>
-                    <span className="font-mono text-foreground">+{formatCOP(zoneTotal)}</span>
+                    <span
+                      className={`font-mono ${
+                        zoneTotal > 0
+                          ? "font-semibold text-foreground"
+                          : "font-medium text-emerald-600 dark:text-emerald-400"
+                      }`}
+                    >
+                      {zoneTotal > 0 ? `+${formatCOP(zoneTotal)}` : "Incluido"}
+                    </span>
                   </div>
                 );
               })}
