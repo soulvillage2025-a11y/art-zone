@@ -12,30 +12,9 @@ export type RealisticBudaProps = {
   className?: string | undefined;
 };
 
-// Check if a color is the original white marble tone
-function isDefaultMarbleColor(zone: string, hex?: string) {
-  if (!hex) return true;
-  const h = hex.toLowerCase();
-  const defaults: Record<string, string> = {
-    manto: "#ede9e3",
-    piel: "#f5f3ef",
-    rizos: "#dad5ca",
-    collar: "#fdfcfb",
-    detalles: "#e7e3da",
-  };
-  return (
-    h === defaults[zone]?.toLowerCase() ||
-    h === "#ffffff" ||
-    h === "#f3f1ec" ||
-    h === "#efede7" ||
-    h === "#e2ded4"
-  );
-}
-
 export function RealisticBudaBendicion({
   view,
   colors,
-  finishes = {},
   activeZone,
   onZoneClick,
   className,
@@ -78,60 +57,8 @@ export function RealisticBudaBendicion({
 
   const urnaCoords =
     view === "frontal" ? { cx: 508, cy: 175 } : { cx: 458, cy: 198 };
-  const rawDetallesColor = colors["detalles"];
-  const isDetallesDefault = isDefaultMarbleColor("detalles", rawDetallesColor);
 
-  // Layer 1: Pigment & Finishes (clipped strictly to authentic sculpture silhouette)
-  const renderZoneColor = (zoneKey: string, pathD: string) => {
-    if (!pathD) return null;
-    const rawColor = colors[zoneKey];
-    const isDefault = isDefaultMarbleColor(zoneKey, rawColor);
-    const finish = finishes[zoneKey] ?? "Original";
-
-    const fillColor = rawColor || "#EFEDE7";
-    const isDark =
-      fillColor.toLowerCase() === "#161616" ||
-      fillColor.toLowerCase() === "#12284c" ||
-      fillColor.toLowerCase() === "#281b18" ||
-      fillColor.toLowerCase() === "#1f2937";
-
-    if (isDefault) return null;
-
-    return (
-      <g key={`color-${zoneKey}`} pointerEvents="none">
-        {/* Color tint: 'color' blend mode preserves marble luminance, relief shadows & engravings */}
-        <path
-          d={pathD}
-          fill={fillColor}
-          style={{ mixBlendMode: isDark ? "multiply" : "color" }}
-          opacity={isDark ? 0.88 : 0.86}
-          className="transition-all duration-300"
-        />
-
-        {/* Gloss finish specular overlay */}
-        {finish === "Brillante" && (
-          <path
-            d={pathD}
-            fill="url(#buda-gloss-shine)"
-            style={{ mixBlendMode: "screen" }}
-            opacity={0.32}
-          />
-        )}
-
-        {/* Metallic finish overlay */}
-        {finish === "Metálico" && (
-          <path
-            d={pathD}
-            fill="url(#buda-metal-specular)"
-            style={{ mixBlendMode: "overlay" }}
-            opacity={0.42}
-          />
-        )}
-      </g>
-    );
-  };
-
-  // Layer 2: Transparent Interactive Hit Target (without intrusive outlines/shading on the sculpture)
+  // Transparent Interactive Hit Target: allows clicking on the sculpture to select the zone
   const renderZoneInteraction = (zoneKey: string, pathD: string) => {
     if (!pathD) return null;
 
@@ -157,28 +84,13 @@ export function RealisticBudaBendicion({
       aria-label="Buda de la Bendición personalizado"
     >
       <defs>
-        {/* Sculpture silhouette clip path to prevent any pixel leakage outside marble stone */}
+        {/* Sculpture silhouette clip path to keep hit areas bounded inside marble stone */}
         <clipPath id={`buda-statue-clip-${view}`}>
           <path d={activePaths.silhouette} />
         </clipPath>
-
-        {/* Radial highlight for glossy lacquer */}
-        <radialGradient id="buda-gloss-shine" cx="0.45" cy="0.35" r="0.75">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
-          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.1" />
-          <stop offset="100%" stopColor="#000000" stopOpacity="0.25" />
-        </radialGradient>
-
-        {/* Specular gradient for metallic effect */}
-        <linearGradient id="buda-metal-specular" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
-          <stop offset="25%" stopColor="#ffffff" stopOpacity="0.05" />
-          <stop offset="60%" stopColor="#000000" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.65" />
-        </linearGradient>
       </defs>
 
-      {/* 1. Base High-Definition Sculpture Photograph */}
+      {/* 1. Base High-Definition Sculpture Photograph (kept clean and natural without color washes) */}
       <image
         href={imageSrc}
         x="0"
@@ -188,28 +100,7 @@ export function RealisticBudaBendicion({
         preserveAspectRatio="xMidYMid meet"
       />
 
-      {/* 2. Clipped Color & Finish Overlays (anatomically bounded inside statue silhouette) */}
-      <g clipPath={`url(#buda-statue-clip-${view})`}>
-        {renderZoneColor("manto", activePaths.manto)}
-        {renderZoneColor("piel", activePaths.piel)}
-        {renderZoneColor("collar", activePaths.collar)}
-        {renderZoneColor("rizos", activePaths.rizos)}
-        {renderZoneColor("detalles", activePaths.detalles)}
-      </g>
-
-      {/* Forehead Urna color tint */}
-      {!isDetallesDefault && (
-        <circle
-          cx={urnaCoords.cx}
-          cy={urnaCoords.cy}
-          r={7.5}
-          fill={rawDetallesColor || "#E7E3DA"}
-          style={{ mixBlendMode: "multiply" }}
-          className="transition-all duration-300 pointer-events-none"
-        />
-      )}
-
-      {/* 3. Transparent Interactive Hit Areas (clean interaction without outlines or shading) */}
+      {/* 2. Transparent Interactive Hit Areas (clean interaction without color overlays or shading) */}
       <g clipPath={`url(#buda-statue-clip-${view})`}>
         {renderZoneInteraction("manto", activePaths.manto)}
         {renderZoneInteraction("piel", activePaths.piel)}
@@ -231,7 +122,7 @@ export function RealisticBudaBendicion({
         onMouseLeave={interactive ? () => setHoveredZone(null) : undefined}
       />
 
-      {/* 4. Interactive Minimalist Hotpoints: glowing bright green when selected */}
+      {/* 3. Interactive Minimalist Hotpoints: glowing bright green when selected */}
       {interactive && (
         <g className="select-none">
           {Object.entries(hotspots).map(([zoneKey, spot]) => {
@@ -297,7 +188,7 @@ export function RealisticBudaBendicion({
                       height={24}
                       fill={isActive ? "#0F172A" : "rgba(255,255,255,0.96)"}
                       stroke={isActive ? "#22C55E" : "rgba(0,0,0,0.18)"}
-                      strokeWidth={isActive ? 2 : 1}
+                      strokeWidth={2}
                       filter="drop-shadow(0 2px 6px rgba(0,0,0,0.2))"
                     />
                     <text
